@@ -453,6 +453,8 @@ git push origin v0.1.1
 
 CI 在 `windows-latest` 上准备 Go、MSYS2(UCRT64)与 vcpkg,运行 `mingw32-make`,打包 `svault-<tag>-windows-x64.zip`(附 SHA-256)并创建 Release(说明自动生成)。标签中含 `-` 的(如 `v0.1.1-rc1`)会自动标记为 **pre-release**。
 
+此外,[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 在推送到 `main` / PR 时构建,并在默认分支预热 vcpkg 缓存;由于 GitHub Actions 缓存按 ref 隔离,发版时(tag)从默认分支恢复缓存,从而免去每次从头编译 SQLCipher/OpenSSL。
+
 ---
 
 ## 目录结构

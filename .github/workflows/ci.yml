@@ -1,0 +1,61 @@
+name: ci
+
+# Builds on the default branch (and PRs). This also warms the vcpkg cache,
+# which the tag-triggered release workflow can then restore (GitHub Actions
+# caches are ref-scoped; caches from the default branch are visible to tags).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Set up MSYS2 (UCRT64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-make
+
+      - name: Cache vcpkg (downloads + binary cache)
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/.vcpkg-cache
+            C:/vcpkg/downloads
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('build.sh') }}
+
+      - name: Prepare vcpkg cache directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/.vcpkg-cache" | Out-Null
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          export VCPKG_ROOT="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+          mingw32-make BASH=bash
+
+      - name: Vet
+        shell: msys2 {0}
+        run: mingw32-make vet BASH=bash
