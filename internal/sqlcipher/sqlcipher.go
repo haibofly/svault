@@ -1,8 +1,7 @@
 package sqlcipher
 
 /*
-#cgo CFLAGS: -DSQLITE_HAS_CODEC -DSQLCIPHER_CRYPTO_OPENSSL -I${SRCDIR}/../../third_party/sqlcipher -I${SRCDIR}/../../third_party/openssl/include
-#cgo LDFLAGS: -L${SRCDIR}/../../third_party/sqlcipher -L${SRCDIR}/../../third_party/openssl/lib -lsqlcipher -lssl -lcrypto -lws2_32 -lgdi32 -lcrypt32 -lbcrypt -luser32 -ladvapi32 -lole32 -lshell32 -lwldap32 -static
+#cgo CFLAGS: -DSQLITE_HAS_CODEC
 #include <sqlite3.h>
 #include <stdlib.h>
 

@@ -1,4 +1,6 @@
 # Build output
+/dist/
+*.dll
 /svault.exe
 *.exe
 *.test

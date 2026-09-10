@@ -1,6 +1,6 @@
 # svault
 
-一个**本地加密的密码 / 密钥管理器**,命令行工具,单文件、离线、无需安装数据库。
+一个**本地加密的密码 / 密钥管理器**,命令行工具,离线、无需安装数据库。
 
 所有内容(密码、密钥、备注)都用一个主密码加密后存在本地一个文件里。即使这个文件被别人拿走,没有主密码也看不到任何明文。
 
@@ -34,7 +34,7 @@
 ## 特性
 
 - **强加密**:底层用 SQLCipher(AES-256),整个数据库文件加密,连表结构都看不到。
-- **单文件**:编译出来就是一个 `svault.exe`,不依赖任何第三方 DLL、不需要联网。
+- **自带加密库**:基于官方 SQLCipher(动态链接),运行时只需 `svault.exe` 加随附的几个 DLL,不需要联网。
 - **简单命令**:`init / put / get / list / rm / passwd`。
 - **批量导入导出**:支持 JSON 导入、明文导出、**加密备份**。
 - **可改主密码**:`passwd` 会重新加密整个库。
@@ -44,10 +44,10 @@
 
 ## 快速上手(直接使用)
 
-假设你已经拿到 `svault.exe`(或自己构建好了,见下文)。打开 **PowerShell**,进入 exe 所在目录:
+拿到 `svault.exe` 后,把它和随附的几个 DLL 放在**同一个目录**(构建产物都在 `dist\`)。打开 **PowerShell**,进入该目录:
 
 ```powershell
-cd C:\Users\你\secret-manager-go
+cd C:\Users\你\secret-manager-go\dist
 ```
 
 ### 1. 创建保险库(第一次使用)
@@ -346,6 +346,8 @@ Remove-Item Env:\SVAULT_PASSWORD
 - Windows 10/11 x64
 - [Go](https://go.dev/dl/)(建议 1.21+,本仓库用 1.27)
 - [MSYS2](https://www.msys2.org/) + MinGW-w64 gcc(用于 CGO)
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/)(vcpkg 编译 SQLCipher 需要 MSVC)
+- 联网(首次构建会下载 vcpkg 与 SQLCipher 源码)
 
 ### 第 1 步:安装 Go
 
@@ -374,31 +376,64 @@ pacman -S --needed mingw-w64-ucrt-x86_64-gcc
 gcc --version
 ```
 
-### 第 3 步:启用 CGO
+### 第 3 步:构建(一条命令)
+
+仓库根目录的 `Makefile` 把"准备 DLL + 编译"全封装好了。Windows 上没有 `make` 时用 MSYS2 自带的 `mingw32-make`(功能相同):
 
 ```powershell
-go env -w CGO_ENABLED=1
+cd C:\Users\你\secret-manager-go
+mingw32-make
 ```
 
-### 第 4 步:构建
+它会自动完成:
+
+1. 运行 `build.sh`:若没有 vcpkg 就 clone + bootstrap,并安装 `sqlcipher:x64-windows`;
+2. 把 `sqlcipher.dll`、`libcrypto-3-x64.dll`、`libssl-3-x64.dll` 复制到 `dist\`;
+3. 用 cgo 编译出 `dist\svault.exe`。
+
+首次构建较慢(要编译 SQLCipher/OpenSSL,约 10 分钟),之后是秒级。产物:
+
+```
+dist\svault.exe
+dist\sqlcipher.dll
+dist\libcrypto-3-x64.dll
+dist\libssl-3-x64.dll
+```
+
+> ⚠️ 不能直接 `go build`:cgo 需要的头文件/库路径由 `Makefile` 通过 `CGO_CFLAGS`/`CGO_LDFLAGS` 注入。请统一用 make 构建。
+
+### 常用 make 目标
+
+| 目标 | 说明 |
+|---|---|
+| `build` | 准备 DLL 并编译到 `dist\`(默认目标,直接 `mingw32-make` 等价) |
+| `dlls` | 只运行 `build.sh`(准备/复制 DLL) |
+| `run` | 运行,可传参:`mingw32-make run ARGS="list"` |
+| `test` | 运行测试 `go test ./...` |
+| `fmt` / `vet` / `tidy` | 格式化 / 静态检查 / 整理依赖 |
+| `clean` | 删除 `dist\` |
+
+### 可配置项
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `VCPKG_ROOT` | `C:/Users/Eron/vcpkg` | vcpkg 位置,可覆盖 |
+| `BASH` | `C:/msys64/usr/bin/bash.exe` | 运行 `build.sh` 用的 bash |
+| `HTTPS_PROXY` | 空 | 若 vcpkg 下载需要代理,先设置它 |
 
 ```powershell
-$env:PATH = "C:\msys64\ucrt64\bin;C:\Program Files\Go\bin;$env:PATH"
-$env:CGO_ENABLED = "1"
-go build -o svault.exe ./cmd/svault
+# 用自定义 vcpkg 目录
+mingw32-make VCPKG_ROOT=D:/tools/vcpkg
+
+# 或先设环境变量
+$env:VCPKG_ROOT = "D:/tools/vcpkg"
+mingw32-make
 ```
 
-构建完成后会得到 `svault.exe`,可以直接运行,**不需要任何 DLL**。
+### 分发与运行
 
-### 第 5 步(可选):重新生成 SQLCipher 静态库
-
-仓库里已经带好了 `third_party/sqlcipher/libsqlcipher.a`。如果你想从源码重新生成它(例如升级 SQLCipher):
-
-```bash
-# 在 MSYS2 UCRT64 终端里
-cd /c/Users/你/secret-manager-go/third_party/sqlcipher
-bash build.sh
-```
+- 运行需要 `svault.exe` 与那 3 个 DLL 在**同一目录**;
+- 目标机器还需要 **MSVC 运行库**(`VCRUNTIME140.dll`,随 VC++ Redistributable 安装)。若目标机器没装,可一并拷贝该 DLL,或让用户安装 VC++ Redistributable。
 
 ---
 
@@ -407,30 +442,28 @@ bash build.sh
 ```
 secret-manager-go/
 ├─ go.mod
+├─ Makefile                             ← 构建入口(准备 DLL + 编译)
+├─ build.sh                             ← vcpkg 自动化:准备 dist/ 下的 DLL
 ├─ README.md
-├─ svault.exe                          ← 编译产物(单文件)
+├─ dist/                                ← 构建产物(gitignore)
+│  ├─ svault.exe
+│  ├─ sqlcipher.dll
+│  ├─ libcrypto-3-x64.dll
+│  └─ libssl-3-x64.dll
 ├─ cmd/
 │  └─ svault/
 │     └─ main.go                       ← 程序入口
-├─ internal/
-│  ├─ sqlcipher/
-│  │  └─ sqlcipher.go                  ← 通过 CGO 调用 SQLCipher
-│  ├─ vault/
-│  │  └─ vault.go                      ← 保险库读写(增删改查、改密)
-│  ├─ session/
-│  │  ├─ session.go                    ← 会话缓存(读写、过期、原子替换)
-│  │  └─ dpapi_windows.go              ← Windows DPAPI 加解密封装
-│  └─ cli/
-│     ├─ commands.go                   ← 各子命令
-│     └─ password.go                   ← 控制台隐藏输入
-└─ third_party/
+└─ internal/
    ├─ sqlcipher/
-   │  ├─ sqlite3.c / sqlite3.h         ← 官方 SQLCipher 4.6.1 amalgamation
-   │  ├─ libsqlcipher.a                ← 编译好的静态库
-   │  └─ build.sh                      ← 重新生成静态库的脚本
-   └─ openssl/
-      ├─ lib/  (libcrypto.a, libssl.a)
-      └─ include/openssl/              ← OpenSSL 头文件
+   │  └─ sqlcipher.go                  ← 通过 CGO 动态链接 SQLCipher
+   ├─ vault/
+   │  └─ vault.go                      ← 保险库读写(增删改查、改密)
+   ├─ session/
+   │  ├─ session.go                    ← 会话缓存(读写、过期、原子替换)
+   │  └─ dpapi_windows.go              ← Windows DPAPI 加解密封装
+   └─ cli/
+      ├─ commands.go                   ← 各子命令
+      └─ password.go                   ← 控制台隐藏输入
 ```
 
 ---
@@ -456,10 +489,13 @@ secret-manager-go/
 在 `%USERPROFILE%\.svault\session`,用 Windows DPAPI 加密、绑定当前用户,文件中无明文。但挡不住以你身份运行的恶意程序。
 
 **Q:构建时报 `gcc: not found` / `exec: "gcc": executable file not found`?**
-`C:\msys64\ucrt64\bin` 没有加进 PATH,或没有重开终端。参考上面的第 2、4 步。
+`C:\msys64\ucrt64\bin` 没有加进 PATH,或没有重开终端。参考上面的第 2 步。
+
+**Q:构建时 vcpkg 报错 / 找不到编译器?**
+vcpkg 的 `x64-windows` 三元组需要 **Visual Studio Build Tools**(MSVC)。请安装它,见"需要准备的"。
 
 **Q:运行 exe 会缺 DLL 吗?**
-不会。当前版本是**全静态**编译,只依赖 Windows 自带系统库,拷到别的 Windows 10/11 上可直接运行。
+会。当前是**动态链接**:`svault.exe` 必须与 `sqlcipher.dll`、`libcrypto-3-x64.dll`、`libssl-3-x64.dll` 放在**同一目录**(构建产物都在 `dist\`)。目标机器还需 MSVC 运行库(`VCRUNTIME140.dll`,安装 VC++ Redistributable 即可)。
 
 **Q:`get` 的输出能直接给脚本用吗?**
 可以,`get` 只输出值本身:
