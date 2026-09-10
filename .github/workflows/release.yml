@@ -36,6 +36,10 @@ jobs:
         shell: msys2 {0}
         run: |
           export VCPKG_ROOT="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+          # Make the Go toolchain installed by actions/setup-go visible inside MSYS2.
+          if [ -n "${GOROOT:-}" ]; then
+            export PATH="$(cygpath -u "$GOROOT")/bin:$PATH"
+          fi
           echo "VCPKG_ROOT=$VCPKG_ROOT"
           go version
           mingw32-make BASH=bash
