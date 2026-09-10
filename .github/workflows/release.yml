@@ -15,12 +15,17 @@ jobs:
   build:
     runs-on: windows-latest
 
+    env:
+      # Cache built vcpkg packages across runs so releases do not rebuild
+      # SQLCipher/OpenSSL from scratch every time.
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -32,6 +37,18 @@ jobs:
           install: >-
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-make
+
+      - name: Cache vcpkg (downloads + binary cache)
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/.vcpkg-cache
+            C:/vcpkg/downloads
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('build.sh') }}
+
+      - name: Prepare vcpkg cache directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/.vcpkg-cache" | Out-Null
 
       - name: Build
         shell: msys2 {0}
