@@ -55,7 +55,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $v = "${{ github.ref_name }}"
+          $extra = @()
+          if ($v -match '-') { $extra += '--prerelease' }
           gh release create $v `
             "svault-$v-windows-x64.zip" `
             "svault-$v-windows-x64.zip.sha256" `
-            --title "svault $v" --generate-notes
+            --title "svault $v" --generate-notes @extra

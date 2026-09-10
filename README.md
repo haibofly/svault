@@ -451,7 +451,7 @@ git tag -a v0.1.1 -m "svault v0.1.1"
 git push origin v0.1.1
 ```
 
-CI 在 `windows-latest` 上准备 Go、MSYS2(UCRT64)与 vcpkg,运行 `mingw32-make`,打包 `svault-<tag>-windows-x64.zip`(附 SHA-256)并创建 Release(说明自动生成)。
+CI 在 `windows-latest` 上准备 Go、MSYS2(UCRT64)与 vcpkg,运行 `mingw32-make`,打包 `svault-<tag>-windows-x64.zip`(附 SHA-256)并创建 Release(说明自动生成)。标签中含 `-` 的(如 `v0.1.1-rc1`)会自动标记为 **pre-release**。
 
 ---
 
