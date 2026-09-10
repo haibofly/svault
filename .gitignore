@@ -1,0 +1,19 @@
+# Build output
+/svault.exe
+*.exe
+*.test
+*.out
+
+# Local secrets and vault data
+/token.json
+*.db
+*.enc
+
+# Go
+/vendor/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
