@@ -1,7 +1,7 @@
 name: ci
 
-# Builds on the default branch (and PRs). This also warms the vcpkg cache,
-# which the tag-triggered release workflow can then restore (GitHub Actions
+# Builds on the default branch (and PRs). This also warms the vcpkg installed
+# tree cache, which the tag-triggered release workflow restores (GitHub Actions
 # caches are ref-scoped; caches from the default branch are visible to tags).
 
 on:
@@ -16,9 +16,6 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-
-    env:
-      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
 
     steps:
       - name: Checkout
@@ -38,17 +35,13 @@ jobs:
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-make
 
-      - name: Cache vcpkg (downloads + binary cache)
+      - name: Cache vcpkg installed tree and downloads
         uses: actions/cache@v6
         with:
           path: |
-            ${{ github.workspace }}/.vcpkg-cache
+            C:/vcpkg/installed
             C:/vcpkg/downloads
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('build.sh') }}
-
-      - name: Prepare vcpkg cache directory
-        shell: pwsh
-        run: New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/.vcpkg-cache" | Out-Null
+          key: vcpkg-installed-v1-${{ runner.os }}-${{ hashFiles('build.sh') }}
 
       - name: Build
         shell: msys2 {0}

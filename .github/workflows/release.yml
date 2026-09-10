@@ -15,11 +15,6 @@ jobs:
   build:
     runs-on: windows-latest
 
-    env:
-      # Cache built vcpkg packages across runs so releases do not rebuild
-      # SQLCipher/OpenSSL from scratch every time.
-      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -38,23 +33,20 @@ jobs:
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-make
 
-      - name: Cache vcpkg (downloads + binary cache)
+      # Restores the vcpkg installed tree warmed on the default branch (see ci.yml),
+      # so sqlcipher does not need to be rebuilt from source on every release.
+      - name: Cache vcpkg installed tree and downloads
         uses: actions/cache@v6
         with:
           path: |
-            ${{ github.workspace }}/.vcpkg-cache
+            C:/vcpkg/installed
             C:/vcpkg/downloads
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('build.sh') }}
-
-      - name: Prepare vcpkg cache directory
-        shell: pwsh
-        run: New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/.vcpkg-cache" | Out-Null
+          key: vcpkg-installed-v1-${{ runner.os }}-${{ hashFiles('build.sh') }}
 
       - name: Build
         shell: msys2 {0}
         run: |
           export VCPKG_ROOT="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
-          go version
           mingw32-make BASH=bash
 
       - name: Package
