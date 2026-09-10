@@ -44,11 +44,13 @@
 
 ## 快速上手(直接使用)
 
-拿到 `svault.exe` 后,把它和随附的几个 DLL 放在**同一个目录**(构建产物都在 `dist\`)。打开 **PowerShell**,进入该目录:
+从 [Releases](https://github.com/haibofly/svault/releases) 下载 `svault-vX.Y.Z-windows-x64.zip`,解压后把 `svault.exe` 和随附的 DLL 放在**同一个目录**。打开 **PowerShell**,进入该目录:
 
 ```powershell
-cd C:\Users\你\secret-manager-go\dist
+cd C:\path\to\svault
 ```
+
+> **运行环境**:Windows 10/11 x64。还需要安装 **Microsoft Visual C++ Redistributable**(提供 `VCRUNTIME140.dll`)。发布包**不包含**该 DLL,未安装时会提示缺少 DLL。
 
 ### 1. 创建保险库(第一次使用)
 
@@ -502,3 +504,10 @@ vcpkg 的 `x64-windows` 三元组需要 **Visual Studio Build Tools**(MSVC)。�
 ```powershell
 $token = .\svault.exe get github_token
 ```
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 haibofly
+

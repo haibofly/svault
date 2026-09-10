@@ -1,0 +1,4 @@
+# Normalize text files; force LF for shell scripts so they run under MSYS2 bash.
+* text=auto
+*.sh text eol=lf
+Makefile text eol=lf
