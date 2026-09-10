@@ -14,6 +14,11 @@
 # Go
 /vendor/
 
+# Release artifacts
+RELEASE_NOTES.md
+*.zip
+*.sha256
+
 # Editor and OS files
 .vscode/
 .idea/

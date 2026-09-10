@@ -1,0 +1,61 @@
+name: release
+
+# Build and publish a GitHub Release whenever a v* tag is pushed.
+# (e.g. git tag -a v0.1.1 -m "svault v0.1.1" && git push origin v0.1.1)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up MSYS2 (UCRT64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-make
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          export VCPKG_ROOT="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+          echo "VCPKG_ROOT=$VCPKG_ROOT"
+          go version
+          mingw32-make BASH=bash
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}"
+          Compress-Archive -Path dist/* -DestinationPath "svault-$v-windows-x64.zip"
+          $h = (Get-FileHash "svault-$v-windows-x64.zip" -Algorithm SHA256).Hash.ToLower()
+          "$h  svault-$v-windows-x64.zip" | Set-Content "svault-$v-windows-x64.zip.sha256"
+          Get-ChildItem "svault-$v-windows-x64.zip*" | Select-Object Name, Length
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ github.ref_name }}"
+          gh release create $v `
+            "svault-$v-windows-x64.zip" `
+            "svault-$v-windows-x64.zip.sha256" `
+            --title "svault $v" --generate-notes

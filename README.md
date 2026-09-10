@@ -1,5 +1,10 @@
 # svault
 
+[![Release](https://img.shields.io/github/v/release/haibofly/svault)](https://github.com/haibofly/svault/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+最新版本:**v0.1.0**
+
 一个**本地加密的密码 / 密钥管理器**,命令行工具,离线、无需安装数据库。
 
 所有内容(密码、密钥、备注)都用一个主密码加密后存在本地一个文件里。即使这个文件被别人拿走,没有主密码也看不到任何明文。
@@ -437,6 +442,17 @@ mingw32-make
 - 运行需要 `svault.exe` 与那 3 个 DLL 在**同一目录**;
 - 目标机器还需要 **MSVC 运行库**(`VCRUNTIME140.dll`,随 VC++ Redistributable 安装)。若目标机器没装,可一并拷贝该 DLL,或让用户安装 VC++ Redistributable。
 
+### 自动发布(维护者)
+
+推送 `v*` 标签会触发 [`.github/workflows/release.yml`](.github/workflows/release.yml),在 GitHub Actions 上自动构建并发布 Release:
+
+```powershell
+git tag -a v0.1.1 -m "svault v0.1.1"
+git push origin v0.1.1
+```
+
+CI 在 `windows-latest` 上准备 Go、MSYS2(UCRT64)与 vcpkg,运行 `mingw32-make`,打包 `svault-<tag>-windows-x64.zip`(附 SHA-256)并创建 Release(说明自动生成)。
+
 ---
 
 ## 目录结构
@@ -447,6 +463,10 @@ secret-manager-go/
 ├─ Makefile                             ← 构建入口(准备 DLL + 编译)
 ├─ build.sh                             ← vcpkg 自动化:准备 dist/ 下的 DLL
 ├─ README.md
+├─ LICENSE                              ← MIT
+├─ CHANGELOG.md
+├─ .gitattributes                       ← 统一行尾(*.sh 强制 LF)
+├─ .github/workflows/release.yml        ← tag 触发的自动发布
 ├─ dist/                                ← 构建产物(gitignore)
 │  ├─ svault.exe
 │  ├─ sqlcipher.dll
