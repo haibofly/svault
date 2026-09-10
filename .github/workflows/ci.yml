@@ -58,4 +58,6 @@ jobs:
 
       - name: Vet
         shell: msys2 {0}
-        run: mingw32-make vet BASH=bash
+        run: |
+          export VCPKG_ROOT="${VCPKG_INSTALLATION_ROOT:-C:/vcpkg}"
+          mingw32-make vet BASH=bash
