@@ -455,6 +455,8 @@ CI 在 `windows-latest` 上准备 Go、MSYS2(UCRT64)与 vcpkg,运行 `mingw32-ma
 
 此外,[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 在推送到 `main` / PR 时构建,并在默认分支预热 vcpkg 缓存;由于 GitHub Actions 缓存按 ref 隔离,发版时(tag)从默认分支恢复缓存,从而免去每次从头编译 SQLCipher/OpenSSL。
 
+> 缓存方案的详细说明见 [`docs/vcpkg-cache.md`](docs/vcpkg-cache.md)。
+
 ---
 
 ## 目录结构
@@ -469,6 +471,8 @@ secret-manager-go/
 ├─ CHANGELOG.md
 ├─ .gitattributes                       ← 统一行尾(*.sh 强制 LF)
 ├─ .github/workflows/release.yml        ← tag 触发的自动发布
+├─ docs/
+│  └─ vcpkg-cache.md                    ← vcpkg 缓存方案说明
 ├─ dist/                                ← 构建产物(gitignore)
 │  ├─ svault.exe
 │  ├─ sqlcipher.dll
