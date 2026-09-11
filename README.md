@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/github/v/release/haibofly/svault)](https://github.com/haibofly/svault/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-最新版本:**v0.1.0**
+最新版本:**v0.1.1**
 
 一个**本地加密的密码 / 密钥管理器**,命令行工具,离线、无需安装数据库。
 
